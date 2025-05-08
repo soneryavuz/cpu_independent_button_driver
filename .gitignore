@@ -1,0 +1,4 @@
+/*build*/
+/CMakeLists*
+/sdkconfig*
+/*main/CMakeLists*
