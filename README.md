@@ -1,6 +1,8 @@
-# Button Driver API Documentation
+<h1 align="center">Button Driver API Documentation</h1>
 
-This document provides an overview and explanation of the button driver code structure. It is intended for developers integrating or maintaining the driver.
+This button driver is designed to operate in a processor-independent manner, either with interrupt-driven or interrupt-free (polling) methods. 
+It supports up to 5 buttons, which can be managed via interrupts or polling. As a prerequisite, the API configuration must be correctly initialized for the target processor.
+This driver has been tested on ESP32; codebases tested on other processors will be shared soon.
 
 ---
 
@@ -122,32 +124,63 @@ void button_process(void);
 ## 5. Usage Example
 
 ```c
-// Application-level callback
-void on_button_event(button_pressed_types_t type, button_enum id) {
-    switch(type) {
+#include "button.h"
+
+//--- Application callback ----------------
+static void button_event_callback(button_pressed_types_t type, button_enum button_id){
+    switch (type) {
         case BUTTON_NORMAL_PRESS:
-            // handle single press
+            // single press logic
             break;
         case BUTTON_DOUBLE_PRESS:
-            // handle double press
+            // double press logic
             break;
         case BUTTON_LONG_PRESS:
-            // handle long press
+            // long press logic
+            break;
+        default:
             break;
     }
 }
 
-// Setup
-button_api_t cfg = { /* fill members */ };
-button_initialize(&cfg);
+// -------------button api init begin------------------
+button_api.button_pins[BUTTON_1].pin = BUTTON1_GPIO;
+button_api.button_pins[BUTTON_1].interrupt_mode = BUTTON_INTERRUPT_MODE_BOTH_EDGES;
+button_api.button_pins[BUTTON_2].pin = BUTTON2_GPIO;
+button_api.button_pins[BUTTON_2].interrupt_mode = BUTTON_INTERRUPT_MODE_NONE;
+button_api.size_of_buttons = 2;
+button_api.active_high = 0;
+button_api.tick_count_in_1us = USEC_TO_TICK(1); //40000000/1000000 * 1 40MHz
+button_api.debounce_us = 10000; //10ms
+button_api.long_press_us = 1000000; //1s
+button_api.fp_tick_elapsed = tick_elapsed;
+button_api.fp_read_button = read_button;
+button_api.fp_get_current_tick = get_current_tick;
+button_api.fp_event_callback = button_event_callback;
+int ret_value = button_initialize(&button_api);
+// -------------button api init end------------------
 
-// In main loop (e.g., every 5 ms)
+// -------------IO Configuration start------------------
+gpio_config_t io_conf;
+io_conf.pin_bit_mask = (1ULL << BUTTON1_GPIO);
+io_conf.mode = GPIO_MODE_INPUT;
+io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
+io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+io_conf.intr_type = GPIO_INTR_ANYEDGE;
+gpio_config(&io_conf);
+io_conf.pin_bit_mask = (1ULL << BUTTON2_GPIO);
+io_conf.intr_type = GPIO_INTR_DISABLE;
+gpio_config(&io_conf);
+gpio_install_isr_service(0);
+gpio_isr_handler_add(BUTTON1_GPIO, gpio_isr_handler, (void *)&button_api.button_pins[0]);
+// -------------IO Configuration end--------------------
+
+//--- Main loop --------------------------
 while (1) {
-    button_process();
-    delay_ms(5);
+    button_process();      // must be called periodically
 }
 ```
 
 ---
 
-**End of Documentation**
+**End of README**

@@ -1,0 +1,14 @@
+{
+    "files.associations": {
+        "button.h": "c",
+        "gpio.h": "c",
+        "gptimer.h": "c",
+        "complex": "c",
+        "format": "c",
+        "esp_log.h": "c",
+        "chrono": "c",
+        "variant": "c"
+    },
+    "idf.port": "/dev/ttyUSB0",
+    "idf.flashType": "UART"
+}

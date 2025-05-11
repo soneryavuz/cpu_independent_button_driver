@@ -18,10 +18,18 @@ typedef enum
     BUTTON_DOUBLE_PRESS,
 } button_pressed_types_t;
 
+typedef enum
+{
+    BUTTON_INTERRUPT_MODE_NONE,
+    BUTTON_INTERRUPT_MODE_RISING_EDGE,
+    BUTTON_INTERRUPT_MODE_FALLING_EDGE,
+    BUTTON_INTERRUPT_MODE_BOTH_EDGES,
+} button_interrupt_mode_t;
+
 typedef struct
 {
     uint8_t pin;
-    uint8_t interrupt_mode;
+    button_interrupt_mode_t interrupt_mode;
     uint8_t * p_reg;
 } pin_config_t;
 
@@ -38,5 +46,10 @@ typedef struct
     uint32_t (* fp_get_current_tick)(void);
     void (* fp_event_callback)(button_pressed_types_t type, button_enum button_id);
 } button_api_t;
+
+extern int button_initialize(button_api_t * p_button_api);
+extern void button_isr(pin_config_t * p_pin);
+extern void button_process();
+
 
 #endif // BUTTON_H
